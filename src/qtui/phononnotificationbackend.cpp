@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include <QFileDialog>
+#include <QUrl>
 
 #include <phonon/mediaobject.h>
 #include <phonon/backendcapabilities.h>
@@ -34,13 +35,14 @@ PhononNotificationBackend::PhononNotificationBackend(QObject *parent)
     : AbstractNotificationBackend(parent),
     _media(0)
 {
-    _audioAvailable = !Phonon::BackendCapabilities::availableAudioOutputDevices().isEmpty();
     NotificationSettings notificationSettings;
-    _enabled = notificationSettings.value("Phonon/Enabled", true).toBool();
-    createMediaObject(notificationSettings.value("Phonon/AudioFile", QString()).toString());
-
     notificationSettings.notify("Phonon/Enabled", this, SLOT(enabledChanged(const QVariant &)));
     notificationSettings.notify("Phonon/AudioFile", this, SLOT(audioFileChanged(const QVariant &)));
+
+    createMediaObject(notificationSettings.value("Phonon/AudioFile", QString()).toString());
+
+    _enabled = notificationSettings.value("Phonon/Enabled", true).toBool();
+    _audioAvailable = !Phonon::BackendCapabilities::availableAudioOutputDevices().isEmpty();
 }
 
 
@@ -98,7 +100,7 @@ void PhononNotificationBackend::createMediaObject(const QString &file)
         return;
     }
 
-    _media = Phonon::createPlayer(Phonon::NotificationCategory, Phonon::MediaSource(file));
+    _media = Phonon::createPlayer(Phonon::NotificationCategory, Phonon::MediaSource(QUrl::fromLocalFile(file)));
 }
 
 
@@ -199,7 +201,7 @@ void PhononNotificationBackend::ConfigWidget::on_play_clicked()
             if (audioPreview)
                 delete audioPreview;
 
-            audioPreview = Phonon::createPlayer(Phonon::NotificationCategory, Phonon::MediaSource(ui.filename->text()));
+            audioPreview = Phonon::createPlayer(Phonon::NotificationCategory, Phonon::MediaSource(QUrl::fromLocalFile(ui.filename->text())));
             audioPreview->play();
         }
     }
